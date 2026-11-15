@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCraft — IT-курсы</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --surface: #151a28;
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #f3f4f6;
+            --muted: #9ca3af;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --gradient: linear-gradient(135deg, #6366f1, #a855f7);
+            --radius: 20px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            padding: 20px 0;
+            background: rgba(11, 15, 25, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+        .nav-inner { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+        .logo span { color: var(--accent); }
+        .nav-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+        .nav-btn:hover { background: var(--border); }
+
+        .hero {
+            padding: 180px 0 100px;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -100px; left: 50%;
+            transform: translateX(-50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+            z-index: -1;
+            filter: blur(60px);
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        .hero h1 span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            color: var(--muted);
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .timer-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 50px;
+        }
+        .timer-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            min-width: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .timer-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1;
+        }
+        .timer-label {
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: var(--gradient);
+            color: white;
+            padding: 18px 40px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        section { padding: 100px 0; }
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 60px;
+            font-size: 1.1rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 40px;
+            transition: 0.3s;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .feature-card.visible { opacity: 1; transform: translateY(0); }
+        .feature-card:hover { border-color: rgba(99, 102, 241, 0.5); transform: translateY(-5px); }
+        .feature-icon {
+            width: 60px; height: 60px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .feature-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; }
+        .feature-desc { color: var(--muted); font-size: 0.95rem; }
+
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        .review-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 30px;
+            position: relative;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .review-card.visible { opacity: 1; transform: translateY(0); }
+        .review-text {
+            font-size: 1rem;
+            margin-bottom: 20px;
+            color: #d1d5db;
+            font-style: italic;
+        }
+        .review-author {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .avatar {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+        }
+        .author-info h4 { font-size: 1rem; font-weight: 700; }
+        .author-info p { font-size: 0.85rem; color: var(--muted); }
+
+        .form-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 60px 40px;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: 0.5s;
+        }
+        .form-section.visible { opacity: 1; transform: translateY(0); }
+        
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; font-size: 0.9rem; margin-bottom: 8px; color: var(--muted); }
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .submit-btn {
+            width: 100%;
+            background: var(--gradient);
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+            font-family: inherit;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+        .form-note { font-size: 0.8rem; color: var(--muted); margin-top: 15px; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-icon { font-size: 4rem; margin-bottom: 20px; }
+        .modal-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; }
+        .modal-text { color: var(--muted); margin-bottom: 30px; }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .timer-wrapper { flex-wrap: wrap; }
+            .timer-box { min-width: 70px; padding: 10px; }
+            .timer-value { font-size: 1.5rem; }
+            .hero { padding: 140px 0 60px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="container nav-inner">
+            <div class="logo">Code<span>Craft</span></div>
+            <a href="#form" class="nav-btn">Записаться</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>Освой <span>IT-профессию</span><br>за 6 месяцев</h1>
+            <p>Практический курс по веб-разработке с трудоустройством. Никакой воды — только реальные проекты и поддержка менторов.</p>
+            
+            <div class="timer-wrapper">
+                <div class="timer-box">
+                    <span class="timer-value" id="days">00</span>
+                    <span class="timer-label">Дней</span>
+                </div>
+                <div class="timer-box">
+                    <span class="timer-value" id="hours">00</span>
+                    <span class="timer-label">Часов</span>
+                </div>
+                <div class="timer-box">
+                    <span class="timer-value" id="minutes">00</span>
+                    <span class="timer-label">Минут</span>
+                </div>
+                <div class="timer-box">
+                    <span class="timer-value" id="seconds">00</span>
+                    <span class="timer-label">Секунд</span>
+                </div>
+            </div>
+
+            <a href="#form" class="cta-btn">Занять место со скидкой 30%</a>
+        </div>
+    </header>
+
+    <section>
+        <div class="container">
+            <h2 class="section-title">Почему именно мы</h2>
+            <p class="section-subtitle">Всё, что нужно для старта в IT — в одном месте</p>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3 class="feature-title">Практика с первого дня</h3>
+                    <p class="feature-desc">Ты не просто смотришь лекции. Ты пишешь код, делаешь ревью и собираешь портфолио из 5 проектов.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3 class="feature-title">Помощь с трудоустройством</h3>
+                    <p class="feature-desc">Готовим резюме, проводим mock-интервью и рекомендуем лучшим компаниям-партнёрам.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">Живые менторы</h3>
+                    <p class="feature-desc">Никаких записанных курсов двухлетней давности. Менторы на связи каждый день и отвечают на вопросы.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <h2 class="section-title">Отзывы студентов</h2>
+            <p class="section-subtitle">Тех, кто уже сменил профессию</p>
+            
+            <div class="reviews-grid">
+                <div class="review-card">
+                    <p class="review-text">«Пришла с нуля, боялась, что не разберусь. Через 4 месяца сделала первый заказ на фрилансе, а через 6 — вышла на джуна в IT-компанию. Спасибо менторам за терпение!»</p>
+                    <div class="review-author">
+                        <div class="avatar">А</div>
+                        <div class="author-info">
+                            <h4>Анна Смирнова</h4>
+                            <p>Frontend-разработчик</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-card">
+                    <p class="review-text">«Учился параллельно с работой на заводе. Было тяжело, но формат вебинаров и записей очень помог. Сейчас работаю удалённо и зарабатываю в 2 раза больше».</p>
+                    <div class="review-author">
+                        <div class="avatar">Д</div>
+                        <div class="author-info">
+                            <h4>Дмитрий Козлов</h4>
+                            <p>Верстальщик</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-card">
+                    <p class="review-text">«Главная фишка — это реальные проекты. На собеседовании я показывал не сертификат, а работающий сервис, который мы делали в рамках курса. Это и стало решающим фактором».</p>
+                    <div class="review-author">
+                        <div class="avatar">М</div>
+                        <div class="author-info">
+                            <h4>Мария Иванова</h4>
+                            <p>Fullstack-разработчик</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="form">
+        <div class="container">
+            <div class="form-section">
+                <h2 class="section-title">Записаться на курс</h2>
+                <p class="section-subtitle" style="margin-bottom: 30px;">Оставь заявку, и мы пришлём программу и условия</p>
+                
+                <form id="leadForm">
+                    <div class="form-group">
+                        <label>Ваше имя</label>
+                        <input type="text" class="form-input" id="nameInput" placeholder="Иван" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Телефон или Email</label>
+                        <input type="text" class="form-input" id="contactInput" placeholder="+7 (999) 000-00-00" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Получить консультацию</button>
+                    <p class="form-note">Нажимая кнопку, вы соглашаетесь с политикой конфиденциальности.</p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 CodeCraft. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <div class="modal-icon">🎉</div>
+            <h3 class="modal-title">Заявка отправлена!</h3>
+            <p class="modal-text">Мы свяжемся с вами в ближайшее время и вышлем все детали обучения.</p>
+            <button class="submit-btn" onclick="closeModal()">Отлично</button>
+        </div>
+    </div>
+
+    <script>
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + 14);
+        targetDate.setHours(23, 59, 59, 0);
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const distance = targetDate.getTime() - now;
+
+            if (distance < 0) return;
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+        }
+
+        updateTimer();
+        setInterval(updateTimer, 1000);
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+
+        document.querySelectorAll('.feature-card, .review-card, .form-section').forEach(el => {
+            observer.observe(el);
+        });
+
+        const form = document.getElementById('leadForm');
+        const modal = document.getElementById('modal');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('nameInput').value.trim();
+            const contact = document.getElementById('contactInput').value.trim();
+
+            if (name && contact) {
+                form.reset();
+                modal.classList.add('active');
+            }
+        });
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+    </script>
+</body>
+</html>
