@@ -3,518 +3,983 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeCraft — IT-курсы</title>
+    <title>VibeCode AI — Вайб-кодинг с ИИ</title>
+    <meta name="description" content="Лендинг с 3D анимациями и бесплатным ИИ для вайб-кодинга">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
-            --bg: #0b0f19;
-            --surface: #151a28;
-            --border: rgba(255, 255, 255, 0.08);
-            --text: #f3f4f6;
-            --muted: #9ca3af;
-            --accent: #6366f1;
-            --gradient: linear-gradient(135deg, #6366f1, #a855f7);
-            --radius: 20px;
+            --bg: #050510;
+            --card: rgba(12, 12, 28, 0.7);
+            --cyan: #00f0ff;
+            --pink: #ff00aa;
+            --blue: #4d7cff;
+            --text: #e8f0ff;
+            --muted: #8ba3c7;
+            --border: rgba(0, 240, 255, 0.18);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
         body {
-            font-family: 'Manrope', sans-serif;
-            background-color: var(--bg);
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
             color: var(--text);
-            line-height: 1.6;
             overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        /* LOADER */
+        #loader {
+            position: fixed; inset: 0; background: #030308; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.6s, visibility 0.6s;
+        }
+        #loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-logo {
+            font-family: 'Orbitron', sans-serif; font-size: 2.4rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: 5px;
+        }
+        .loader-bar {
+            width: 180px; height: 3px; background: rgba(255,255,255,0.08);
+            border-radius: 4px; margin-top: 24px; overflow: hidden;
+        }
+        .loader-progress {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--cyan), var(--pink));
+            border-radius: 4px; transition: width 0.25s;
+        }
+        .loader-text {
+            margin-top: 14px; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem; color: var(--muted); letter-spacing: 2px;
+        }
 
+        /* CANVAS */
+        #bg-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* NAV */
         nav {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            padding: 20px 0;
-            background: rgba(11, 15, 25, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            z-index: 1000;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(5,5,16,0.75); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); transition: padding 0.3s;
         }
-        .nav-inner { display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
-        .logo span { color: var(--accent); }
-        .nav-btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 10px 24px;
-            border-radius: 30px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: 0.3s;
-            font-size: 0.9rem;
+        nav.scrolled { padding: 10px 32px; }
+        .logo {
+            font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.25rem;
+            letter-spacing: 2px; cursor: pointer;
+            background: linear-gradient(90deg, var(--cyan), #fff, var(--pink));
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: grad 4s linear infinite;
         }
-        .nav-btn:hover { background: var(--border); }
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500;
+            transition: color 0.25s;
+        }
+        .nav-links a:hover { color: var(--cyan); }
+        .nav-cta {
+            background: linear-gradient(135deg, rgba(0,240,255,0.12), rgba(255,0,170,0.12));
+            border: 1px solid var(--cyan); color: var(--cyan);
+            padding: 9px 20px; border-radius: 30px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 600;
+            letter-spacing: 1px; cursor: pointer; text-decoration: none; transition: all 0.3s;
+        }
+        .nav-cta:hover {
+            background: var(--cyan); color: #050510;
+            box-shadow: 0 0 20px rgba(0,240,255,0.4);
+        }
 
+        /* HERO */
         .hero {
-            padding: 180px 0 100px;
-            text-align: center;
-            position: relative;
+            position: relative; min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 110px 20px 70px; z-index: 1;
         }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -100px; left: 50%;
-            transform: translateX(-50%);
-            width: 600px; height: 600px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
-            z-index: -1;
-            filter: blur(60px);
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 7px 16px; background: rgba(0,240,255,0.08);
+            border: 1px solid rgba(0,240,255,0.25); border-radius: 40px;
+            font-size: 0.75rem; color: var(--cyan); margin-bottom: 24px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .hero-badge span {
+            width: 7px; height: 7px; background: var(--cyan); border-radius: 50%;
+            box-shadow: 0 0 8px var(--cyan); animation: blink 1.5s infinite;
         }
         .hero h1 {
-            font-size: clamp(2.5rem, 6vw, 4.5rem);
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 20px;
-            letter-spacing: -1px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 6.5vw, 4.6rem); font-weight: 800;
+            line-height: 1.12; margin-bottom: 20px; letter-spacing: 1px;
         }
-        .hero h1 span {
-            background: var(--gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .hero h1 .grad {
+            background: linear-gradient(135deg, var(--cyan) 0%, #fff 45%, var(--pink) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200% auto; animation: grad 5s ease infinite;
         }
-        .hero p {
-            color: var(--muted);
-            font-size: clamp(1rem, 2vw, 1.2rem);
-            max-width: 600px;
-            margin: 0 auto 40px;
+        .hero-sub {
+            font-size: clamp(1rem, 2vw, 1.25rem); color: var(--muted);
+            max-width: 620px; line-height: 1.65; margin-bottom: 40px;
         }
-
-        .timer-wrapper {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 50px;
+        .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            color: #050510; border: none; padding: 14px 32px; border-radius: 40px;
+            font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 0 25px rgba(0,240,255,0.3);
         }
-        .timer-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 15px 20px;
-            min-width: 90px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 0 40px rgba(0,240,255,0.5);
         }
-        .timer-value {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: var(--accent);
-            line-height: 1;
+        .btn-secondary {
+            background: transparent; color: var(--text);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 14px 32px; border-radius: 40px;
+            font-family: 'Orbitron', sans-serif; font-weight: 600; font-size: 0.9rem;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.3s;
         }
-        .timer-label {
-            font-size: 0.8rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 5px;
+        .btn-secondary:hover {
+            border-color: var(--pink); color: var(--pink);
+            box-shadow: 0 0 18px rgba(255,0,170,0.3);
+        }
+        .scroll-hint {
+            position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+            font-size: 0.65rem; letter-spacing: 2px; color: var(--muted);
+            font-family: 'JetBrains Mono', monospace; animation: bounce 2s infinite;
         }
 
-        .cta-btn {
-            display: inline-block;
-            background: var(--gradient);
-            color: white;
-            padding: 18px 40px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .cta-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
-        }
-
-        section { padding: 100px 0; }
+        /* SECTIONS */
+        section { position: relative; z-index: 1; padding: 90px 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
         .section-title {
-            font-size: clamp(1.8rem, 4vw, 2.5rem);
-            font-weight: 800;
-            text-align: center;
-            margin-bottom: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.7rem, 3.8vw, 2.5rem); font-weight: 700;
+            text-align: center; margin-bottom: 12px; letter-spacing: 1px;
         }
-        .section-subtitle {
-            text-align: center;
-            color: var(--muted);
-            margin-bottom: 60px;
-            font-size: 1.1rem;
+        .section-title span {
+            background: linear-gradient(90deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .section-sub {
+            text-align: center; color: var(--muted); max-width: 540px;
+            margin: 0 auto 50px; font-size: 1rem; line-height: 1.55;
         }
 
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+        /* FEATURES */
+        .features-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px;
         }
         .feature-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 40px;
-            transition: 0.3s;
-            opacity: 0;
-            transform: translateY(30px);
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 18px; padding: 30px 24px;
+            backdrop-filter: blur(12px); transition: all 0.35s;
         }
-        .feature-card.visible { opacity: 1; transform: translateY(0); }
-        .feature-card:hover { border-color: rgba(99, 102, 241, 0.5); transform: translateY(-5px); }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0,240,255,0.4);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+        }
         .feature-icon {
-            width: 60px; height: 60px;
-            background: rgba(99, 102, 241, 0.1);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin-bottom: 20px;
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; margin-bottom: 18px;
+            background: linear-gradient(135deg, rgba(0,240,255,0.12), rgba(255,0,170,0.08));
+            border: 1px solid rgba(0,240,255,0.18);
         }
-        .feature-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; }
-        .feature-desc { color: var(--muted); font-size: 0.95rem; }
+        .feature-card h3 {
+            font-family: 'Orbitron', sans-serif; font-size: 1.05rem;
+            margin-bottom: 10px; letter-spacing: 0.5px;
+        }
+        .feature-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
 
-        .reviews-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+        /* STATS */
+        .stats {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 60px;
         }
-        .review-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 30px;
-            position: relative;
-            opacity: 0;
-            transform: translateY(30px);
+        .stat-item {
+            text-align: center; padding: 22px 12px;
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 16px; transition: all 0.3s;
         }
-        .review-card.visible { opacity: 1; transform: translateY(0); }
-        .review-text {
-            font-size: 1rem;
-            margin-bottom: 20px;
-            color: #d1d5db;
-            font-style: italic;
+        .stat-item:hover { border-color: rgba(0,240,255,0.3); transform: translateY(-4px); }
+        .stat-num {
+            font-family: 'Orbitron', sans-serif; font-size: 1.9rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
         }
-        .review-author {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .avatar {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            background: var(--gradient);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.2rem;
-            color: white;
-        }
-        .author-info h4 { font-size: 1rem; font-weight: 700; }
-        .author-info p { font-size: 0.85rem; color: var(--muted); }
+        .stat-label { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.5px; }
 
-        .form-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 30px;
-            padding: 60px 40px;
-            max-width: 600px;
-            margin: 0 auto;
-            text-align: center;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: 0.5s;
+        /* AI SECTION */
+        .ai-section { background: radial-gradient(ellipse at 50% 0%, rgba(0,70,110,0.12) 0%, transparent 55%); }
+        .ai-panel {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 20px; backdrop-filter: blur(16px);
+            overflow: hidden; max-width: 820px; margin: 0 auto;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.4);
         }
-        .form-section.visible { opacity: 1; transform: translateY(0); }
-        
-        .form-group { margin-bottom: 20px; text-align: left; }
-        .form-group label { display: block; font-size: 0.9rem; margin-bottom: 8px; color: var(--muted); }
-        .form-input {
-            width: 100%;
-            padding: 16px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text);
-            font-family: inherit;
-            font-size: 1rem;
-            transition: 0.3s;
+        .ai-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.25);
         }
-        .form-input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        .ai-header-left { display: flex; align-items: center; gap: 10px; }
+        .ai-status {
+            width: 9px; height: 9px; background: #00ff88; border-radius: 50%;
+            box-shadow: 0 0 10px #00ff88; animation: blink 2s infinite;
         }
-        .submit-btn {
-            width: 100%;
-            background: var(--gradient);
-            color: white;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: 0.3s;
-            font-family: inherit;
+        .ai-header h3 { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; letter-spacing: 0.5px; }
+        .ai-key-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+            color: var(--muted); padding: 5px 12px; border-radius: 16px;
+            font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+            cursor: pointer; transition: all 0.25s;
         }
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        .ai-key-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+        .ai-chat {
+            height: 300px; overflow-y: auto; padding: 20px;
+            display: flex; flex-direction: column; gap: 14px;
         }
-        .form-note { font-size: 0.8rem; color: var(--muted); margin-top: 15px; }
+        .ai-chat::-webkit-scrollbar { width: 5px; }
+        .ai-chat::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.2); border-radius: 3px; }
+        .msg {
+            max-width: 88%; padding: 12px 16px; border-radius: 14px;
+            font-size: 0.9rem; line-height: 1.5; animation: fadeUp 0.35s ease;
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, rgba(0,240,255,0.18), rgba(77,124,255,0.12));
+            border: 1px solid rgba(0,240,255,0.22); border-bottom-right-radius: 4px;
+        }
+        .msg.ai {
+            align-self: flex-start; background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.07); border-bottom-left-radius: 4px;
+        }
+        .msg.ai pre {
+            background: rgba(0,0,0,0.45); padding: 12px; border-radius: 8px;
+            overflow-x: auto; margin-top: 8px;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+            border: 1px solid rgba(0,240,255,0.1); color: #a8e6cf;
+        }
+        .msg.ai code { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--cyan); }
+        .ai-input-area {
+            padding: 14px 18px; border-top: 1px solid var(--border);
+            display: flex; gap: 10px; background: rgba(0,0,0,0.2);
+        }
+        .ai-input {
+            flex: 1; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            padding: 12px 14px; color: var(--text); font-size: 0.9rem;
+            font-family: 'Inter', sans-serif; outline: none; resize: none;
+            min-height: 46px; max-height: 100px; transition: border-color 0.25s;
+        }
+        .ai-input:focus { border-color: var(--cyan); }
+        .ai-input::placeholder { color: rgba(139,163,199,0.55); }
+        .ai-send {
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            border: none; width: 46px; height: 46px; border-radius: 12px;
+            color: #050510; font-size: 1.2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all 0.25s;
+        }
+        .ai-send:hover { transform: scale(1.06); box-shadow: 0 0 18px rgba(0,240,255,0.4); }
+        .ai-send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+        .ai-examples {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 22px;
+        }
+        .example-chip {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+            padding: 7px 14px; border-radius: 24px; font-size: 0.75rem;
+            color: var(--muted); cursor: pointer; transition: all 0.25s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .example-chip:hover {
+            border-color: var(--pink); color: var(--pink);
+            background: rgba(255,0,170,0.07);
+        }
 
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s;
+        /* STEPS */
+        .steps {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px;
         }
-        .modal-overlay.active { display: flex; opacity: 1; }
-        .modal-content {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 40px;
-            border-radius: 24px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            transform: scale(0.9);
-            transition: transform 0.3s;
+        .step {
+            padding: 28px 20px; background: var(--card); border: 1px solid var(--border);
+            border-radius: 18px; text-align: center; transition: all 0.35s;
         }
-        .modal-overlay.active .modal-content { transform: scale(1); }
-        .modal-icon { font-size: 4rem; margin-bottom: 20px; }
-        .modal-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; }
-        .modal-text { color: var(--muted); margin-bottom: 30px; }
+        .step:hover { transform: translateY(-6px); border-color: rgba(255,0,170,0.3); }
+        .step-num {
+            width: 42px; height: 42px; margin: 0 auto 16px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--cyan), var(--pink));
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.1rem;
+            color: #050510; box-shadow: 0 0 20px rgba(0,240,255,0.35);
+        }
+        .step h3 { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 10px; }
+        .step p { color: var(--muted); font-size: 0.85rem; line-height: 1.55; }
 
+        /* FINAL CTA */
+        .final-cta {
+            text-align: center; padding: 100px 20px;
+            background: radial-gradient(ellipse at center, rgba(0,90,130,0.1) 0%, transparent 65%);
+        }
+        .final-cta h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.8rem, 4.5vw, 2.8rem); margin-bottom: 16px; letter-spacing: 1px;
+        }
+        .final-cta p { color: var(--muted); font-size: 1.05rem; max-width: 500px; margin: 0 auto 32px; }
+
+        /* FOOTER */
         footer {
-            border-top: 1px solid var(--border);
-            padding: 40px 0;
-            text-align: center;
-            color: var(--muted);
-            font-size: 0.9rem;
+            position: relative; z-index: 1; padding: 40px 20px 24px;
+            border-top: 1px solid var(--border); text-align: center;
+            background: rgba(0,0,0,0.35);
         }
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.15rem;
+            letter-spacing: 2px; margin-bottom: 12px;
+            background: linear-gradient(90deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 18px; flex-wrap: wrap; }
+        .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.8rem; transition: color 0.25s; }
+        .footer-links a:hover { color: var(--cyan); }
+        .footer-copy { font-size: 0.75rem; color: rgba(139,163,199,0.45); font-family: 'JetBrains Mono', monospace; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+            z-index: 200; display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: #0c0c1e; border: 1px solid var(--border); border-radius: 18px;
+            padding: 28px; width: 90%; max-width: 420px; transform: scale(0.92); transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal { transform: scale(1); }
+        .modal h3 { font-family: 'Orbitron', sans-serif; margin-bottom: 10px; font-size: 1.1rem; }
+        .modal p { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; line-height: 1.5; }
+        .modal input {
+            width: 100%; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+            padding: 12px 14px; color: white; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem; outline: none; margin-bottom: 16px;
+        }
+        .modal input:focus { border-color: var(--cyan); }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btns button {
+            flex: 1; padding: 11px; border-radius: 10px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.25s;
+        }
+        .modal-save {
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            border: none; color: #050510; font-weight: 700;
+        }
+        .modal-cancel {
+            background: transparent; border: 1px solid rgba(255,255,255,0.14); color: var(--muted);
+        }
+
+        /* ANIMATIONS */
+        @keyframes grad {
+            0% { background-position: 0% center; }
+            50% { background-position: 100% center; }
+            100% { background-position: 0% center; }
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(6px); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .reveal {
+            opacity: 0; transform: translateY(30px);
+            transition: all 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
 
         @media (max-width: 768px) {
-            .timer-wrapper { flex-wrap: wrap; }
-            .timer-box { min-width: 70px; padding: 10px; }
-            .timer-value { font-size: 1.5rem; }
-            .hero { padding: 140px 0 60px; }
+            nav { padding: 12px 16px; }
+            .nav-links { display: none; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .hero h1 { font-size: 2.2rem; }
+            .ai-chat { height: 260px; }
         }
     </style>
 </head>
 <body>
+    <div id="loader">
+        <div class="loader-logo">VIBECODE</div>
+        <div class="loader-bar"><div class="loader-progress" id="loaderProgress"></div></div>
+        <div class="loader-text" id="loaderText">ЗАГРУЗКА...</div>
+    </div>
 
-    <nav>
-        <div class="container nav-inner">
-            <div class="logo">Code<span>Craft</span></div>
-            <a href="#form" class="nav-btn">Записаться</a>
-        </div>
+    <canvas id="bg-canvas"></canvas>
+
+    <nav id="navbar">
+        <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">VIBECODE</div>
+        <ul class="nav-links">
+            <li><a href="#features">Возможности</a></li>
+            <li><a href="#ai">ИИ-Площадка</a></li>
+            <li><a href="#how">Как работает</a></li>
+        </ul>
+        <a href="#ai" class="nav-cta">Начать кодить</a>
     </nav>
 
-    <header class="hero">
-        <div class="container">
-            <h1>Освой <span>IT-профессию</span><br>за 6 месяцев</h1>
-            <p>Практический курс по веб-разработке с трудоустройством. Никакой воды — только реальные проекты и поддержка менторов.</p>
-            
-            <div class="timer-wrapper">
-                <div class="timer-box">
-                    <span class="timer-value" id="days">00</span>
-                    <span class="timer-label">Дней</span>
-                </div>
-                <div class="timer-box">
-                    <span class="timer-value" id="hours">00</span>
-                    <span class="timer-label">Часов</span>
-                </div>
-                <div class="timer-box">
-                    <span class="timer-value" id="minutes">00</span>
-                    <span class="timer-label">Минут</span>
-                </div>
-                <div class="timer-box">
-                    <span class="timer-value" id="seconds">00</span>
-                    <span class="timer-label">Секунд</span>
-                </div>
-            </div>
-
-            <a href="#form" class="cta-btn">Занять место со скидкой 30%</a>
+    <section class="hero">
+        <div class="hero-badge"><span></span> БЕСПЛАТНЫЙ ИИ • 100% ВАЙБ</div>
+        <h1>Код рождается<br><span class="grad">из вайба</span></h1>
+        <p class="hero-sub">
+            Опиши настроение, идею или задачу — получи готовый красивый код.
+            Полностью бесплатно. Без ограничений души.
+        </p>
+        <div class="hero-btns">
+            <button class="btn-primary" onclick="document.getElementById('ai').scrollIntoView({behavior:'smooth'})">ЗАПУСТИТЬ ВАЙБ</button>
+            <button class="btn-secondary" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">УЗНАТЬ БОЛЬШЕ</button>
         </div>
-    </header>
+        <div class="scroll-hint">SCROLL</div>
+    </section>
 
-    <section>
+    <section id="features">
         <div class="container">
-            <h2 class="section-title">Почему именно мы</h2>
-            <p class="section-subtitle">Всё, что нужно для старта в IT — в одном месте</p>
-            
-            <div class="features">
-                <div class="feature-card">
-                    <div class="feature-icon">💻</div>
-                    <h3 class="feature-title">Практика с первого дня</h3>
-                    <p class="feature-desc">Ты не просто смотришь лекции. Ты пишешь код, делаешь ревью и собираешь портфолио из 5 проектов.</p>
+            <h2 class="section-title reveal">Почему <span>VibeCode</span></h2>
+            <p class="section-sub reveal">Не просто генератор. Это интерфейс между твоим вайбом и идеальным кодом.</p>
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Мгновенный вайб</h3>
+                    <p>Опиши ощущение или задачу обычным языком. ИИ понимает контекст и настроение.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🚀</div>
-                    <h3 class="feature-title">Помощь с трудоустройством</h3>
-                    <p class="feature-desc">Готовим резюме, проводим mock-интервью и рекомендуем лучшим компаниям-партнёрам.</p>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Красивый код</h3>
+                    <p>Чистый современный код: glassmorphism, неоновые акценты, плавные анимации.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card reveal">
                     <div class="feature-icon">🧠</div>
-                    <h3 class="feature-title">Живые менторы</h3>
-                    <p class="feature-desc">Никаких записанных курсов двухлетней давности. Менторы на связи каждый день и отвечают на вопросы.</p>
+                    <h3>Бесплатный ИИ</h3>
+                    <p>Интеграция с Groq. Llama 3.3 и другие мощные модели без подписок.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🌌</div>
+                    <h3>3D Атмосфера</h3>
+                    <p>Иммерсивный интерфейс с живым 3D фоном. Каждая сессия как полёт.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🔮</div>
+                    <h3>Любой стек</h3>
+                    <p>HTML, CSS, JS, React, Python, шейдеры, Three.js — адаптируется под задачу.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Без цензуры вайба</h3>
+                    <p>Киберпанк, vaporwave, brutalist или минимализм — просто скажи.</p>
+                </div>
+            </div>
+            <div class="stats reveal">
+                <div class="stat-item"><div class="stat-num" data-target="128">0</div><div class="stat-label">K+ токенов/мин</div></div>
+                <div class="stat-item"><div class="stat-num" data-target="0">0</div><div class="stat-label">₽ за использование</div></div>
+                <div class="stat-item"><div class="stat-num" data-target="50">0</div><div class="stat-label">+ моделей</div></div>
+                <div class="stat-item"><div class="stat-num" data-target="100">0</div><div class="stat-label">% вайба</div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="ai-section" id="ai">
+        <div class="container">
+            <h2 class="section-title reveal">ИИ-<span>Площадка</span></h2>
+            <p class="section-sub reveal">Опиши вайб. Получи код. Скопируй. Запусти.</p>
+            <div class="ai-panel reveal">
+                <div class="ai-header">
+                    <div class="ai-header-left">
+                        <div class="ai-status"></div>
+                        <h3>VibeCoder</h3>
+                    </div>
+                    <button class="ai-key-btn" onclick="openKeyModal()">API Key</button>
+                </div>
+                <div class="ai-chat" id="chatContainer">
+                    <div class="msg ai">
+                        Привет. Я VibeCoder. Опиши вайб, настроение или задачу — сгенерирую код.<br><br>
+                        Например: <code>«тёмный киберпанк лендинг с неоном»</code> или <code>«минималистичный todo на React»</code>.
+                    </div>
+                </div>
+                <div class="ai-input-area">
+                    <textarea class="ai-input" id="userInput" placeholder="Опиши вайб или задачу..." rows="1"></textarea>
+                    <button class="ai-send" id="sendBtn" onclick="sendMessage()">↑</button>
+                </div>
+            </div>
+            <div class="ai-examples reveal">
+                <div class="example-chip" onclick="setExample('Сделай неоновый киберпанк портфолио с 3D карточкой')">Киберпанк портфолио</div>
+                <div class="example-chip" onclick="setExample('Минималистичный лендинг в стиле Apple с плавными анимациями')">Apple-style</div>
+                <div class="example-chip" onclick="setExample('Интерактивная 3D сцена Three.js с летающими фигурами')">3D сцена</div>
+                <div class="example-chip" onclick="setExample('Красивый дашборд с glassmorphism и тёмной темой')">Glassmorphism дашборд</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how">
+        <div class="container">
+            <h2 class="section-title reveal">Как это <span>работает</span></h2>
+            <p class="section-sub reveal">Три шага от идеи до работающего кода</p>
+            <div class="steps">
+                <div class="step reveal">
+                    <div class="step-num">1</div>
+                    <h3>Опиши вайб</h3>
+                    <p>Напиши, что чувствуешь или какой результат хочешь. Можно без технических деталей.</p>
+                </div>
+                <div class="step reveal">
+                    <div class="step-num">2</div>
+                    <h3>Получи код</h3>
+                    <p>Модель генерирует чистый, рабочий и стильный код под твой запрос.</p>
+                </div>
+                <div class="step reveal">
+                    <div class="step-num">3</div>
+                    <h3>Используй</h3>
+                    <p>Скопируй, вставь, запусти. Или попроси доработать и добавить анимации.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section>
+    <section class="final-cta">
         <div class="container">
-            <h2 class="section-title">Отзывы студентов</h2>
-            <p class="section-subtitle">Тех, кто уже сменил профессию</p>
-            
-            <div class="reviews-grid">
-                <div class="review-card">
-                    <p class="review-text">«Пришла с нуля, боялась, что не разберусь. Через 4 месяца сделала первый заказ на фрилансе, а через 6 — вышла на джуна в IT-компанию. Спасибо менторам за терпение!»</p>
-                    <div class="review-author">
-                        <div class="avatar">А</div>
-                        <div class="author-info">
-                            <h4>Анна Смирнова</h4>
-                            <p>Frontend-разработчик</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="review-card">
-                    <p class="review-text">«Учился параллельно с работой на заводе. Было тяжело, но формат вебинаров и записей очень помог. Сейчас работаю удалённо и зарабатываю в 2 раза больше».</p>
-                    <div class="review-author">
-                        <div class="avatar">Д</div>
-                        <div class="author-info">
-                            <h4>Дмитрий Козлов</h4>
-                            <p>Верстальщик</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="review-card">
-                    <p class="review-text">«Главная фишка — это реальные проекты. На собеседовании я показывал не сертификат, а работающий сервис, который мы делали в рамках курса. Это и стало решающим фактором».</p>
-                    <div class="review-author">
-                        <div class="avatar">М</div>
-                        <div class="author-info">
-                            <h4>Мария Иванова</h4>
-                            <p>Fullstack-разработчик</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="form">
-        <div class="container">
-            <div class="form-section">
-                <h2 class="section-title">Записаться на курс</h2>
-                <p class="section-subtitle" style="margin-bottom: 30px;">Оставь заявку, и мы пришлём программу и условия</p>
-                
-                <form id="leadForm">
-                    <div class="form-group">
-                        <label>Ваше имя</label>
-                        <input type="text" class="form-input" id="nameInput" placeholder="Иван" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Телефон или Email</label>
-                        <input type="text" class="form-input" id="contactInput" placeholder="+7 (999) 000-00-00" required>
-                    </div>
-                    <button type="submit" class="submit-btn">Получить консультацию</button>
-                    <p class="form-note">Нажимая кнопку, вы соглашаетесь с политикой конфиденциальности.</p>
-                </form>
-            </div>
+            <h2 class="reveal">Готов начать<br><span style="background:linear-gradient(90deg,#00f0ff,#ff00aa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">вайб-кодить?</span></h2>
+            <p class="reveal">Никаких регистраций. Никаких подписок. Только ты, вайб и код.</p>
+            <button class="btn-primary reveal" onclick="document.getElementById('ai').scrollIntoView({behavior:'smooth'})">ОТКРЫТЬ ПЛОЩАДКУ</button>
         </div>
     </section>
 
     <footer>
-        <div class="container">
-            <p>© 2026 CodeCraft. Все права защищены.</p>
+        <div class="footer-logo">VIBECODE</div>
+        <div class="footer-links">
+            <a href="#features">Возможности</a>
+            <a href="#ai">ИИ-Площадка</a>
+            <a href="#how">Как работает</a>
+            <a href="#ai" onclick="openKeyModal()">Настроить API</a>
         </div>
+        <div class="footer-copy">© 2026 VibeCode AI • Powered by free open models</div>
     </footer>
 
-    <div class="modal-overlay" id="modal">
-        <div class="modal-content">
-            <div class="modal-icon">🎉</div>
-            <h3 class="modal-title">Заявка отправлена!</h3>
-            <p class="modal-text">Мы свяжемся с вами в ближайшее время и вышлем все детали обучения.</p>
-            <button class="submit-btn" onclick="closeModal()">Отлично</button>
+    <div class="modal-overlay" id="keyModal">
+        <div class="modal" style="max-width:480px">
+            <h3>Настройки ИИ</h3>
+            <p style="margin-bottom:14px">Поддерживаются любые OpenAI-совместимые API: Groq, OpenRouter, Together, DeepSeek, Fireworks, Mistral, OpenAI, локальный Ollama и т.д.</p>
+            
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px">API Key</label>
+            <input type="password" id="apiKeyInput" placeholder="sk-... или gsk_... или любой ключ" style="margin-bottom:12px">
+            
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px">Base URL (эндпоинт)</label>
+            <input type="text" id="baseUrlInput" placeholder="https://api.groq.com/openai/v1" style="margin-bottom:12px">
+            
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px">Модель</label>
+            <input type="text" id="modelInput" placeholder="llama-3.3-70b-versatile" style="margin-bottom:8px">
+            
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+                <button type="button" class="example-chip" style="font-size:0.68rem;padding:5px 10px" onclick="setPreset('groq')">Groq</button>
+                <button type="button" class="example-chip" style="font-size:0.68rem;padding:5px 10px" onclick="setPreset('openrouter')">OpenRouter</button>
+                <button type="button" class="example-chip" style="font-size:0.68rem;padding:5px 10px" onclick="setPreset('deepseek')">DeepSeek</button>
+                <button type="button" class="example-chip" style="font-size:0.68rem;padding:5px 10px" onclick="setPreset('ollama')">Ollama (локально)</button>
+                <button type="button" class="example-chip" style="font-size:0.68rem;padding:5px 10px" onclick="setPreset('openai')">OpenAI</button>
+            </div>
+            
+            <div class="modal-btns">
+                <button class="modal-cancel" onclick="closeKeyModal()">Отмена</button>
+                <button class="modal-save" onclick="saveApiKey()">Сохранить</button>
+            </div>
         </div>
     </div>
 
     <script>
-        const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() + 14);
-        targetDate.setHours(23, 59, 59, 0);
-
-        function updateTimer() {
-            const now = new Date().getTime();
-            const distance = targetDate.getTime() - now;
-
-            if (distance < 0) return;
-
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            document.getElementById('days').textContent = String(days).padStart(2, '0');
-            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
-            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
-            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
-        }
-
-        updateTimer();
-        setInterval(updateTimer, 1000);
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.15 });
-
-        document.querySelectorAll('.feature-card, .review-card, .form-section').forEach(el => {
-            observer.observe(el);
-        });
-
-        const form = document.getElementById('leadForm');
-        const modal = document.getElementById('modal');
-
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('nameInput').value.trim();
-            const contact = document.getElementById('contactInput').value.trim();
-
-            if (name && contact) {
-                form.reset();
-                modal.classList.add('active');
+        // ===== LOADER =====
+        const loader = document.getElementById('loader');
+        const progressBar = document.getElementById('loaderProgress');
+        const loaderText = document.getElementById('loaderText');
+        let progress = 0;
+        const loadInt = setInterval(() => {
+            progress += Math.random() * 22 + 12;
+            if (progress > 100) progress = 100;
+            progressBar.style.width = progress + '%';
+            if (progress > 40) loaderText.textContent = '3D ДВИЖОК...';
+            if (progress > 75) loaderText.textContent = 'ГОТОВО';
+            if (progress >= 100) {
+                clearInterval(loadInt);
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    initReveal();
+                    animateStats();
+                }, 300);
             }
-        });
+        }, 120);
 
-        function closeModal() {
-            modal.classList.remove('active');
+        // ===== THREE.JS (оптимизированный) =====
+        let scene, camera, renderer, particles, shapes = [];
+        let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
+
+        function initThree() {
+            const canvas = document.getElementById('bg-canvas');
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x050510, 0.002);
+
+            camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 1, 2000);
+            camera.position.z = 700;
+
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true });
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+            renderer.setClearColor(0x000000, 0);
+
+            // Particles — снижено до 900 для скорости
+            const count = 900;
+            const pos = new Float32Array(count * 3);
+            const cols = new Float32Array(count * 3);
+            const c1 = new THREE.Color(0x00f0ff);
+            const c2 = new THREE.Color(0xff00aa);
+            const c3 = new THREE.Color(0x4d7cff);
+
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                pos[i3] = (Math.random() - 0.5) * 1800;
+                pos[i3 + 1] = (Math.random() - 0.5) * 1800;
+                pos[i3 + 2] = (Math.random() - 0.5) * 1600;
+                const c = Math.random() > 0.55 ? c1 : (Math.random() > 0.5 ? c2 : c3);
+                cols[i3] = c.r; cols[i3 + 1] = c.g; cols[i3 + 2] = c.b;
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+
+            particles = new THREE.Points(geo, new THREE.PointsMaterial({
+                size: 2.4, vertexColors: true, transparent: true, opacity: 0.7,
+                sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false
+            }));
+            scene.add(particles);
+
+            // Всего 5 фигур вместо 11
+            const geos = [
+                new THREE.IcosahedronGeometry(36, 1),
+                new THREE.OctahedronGeometry(32, 0),
+                new THREE.TorusGeometry(26, 9, 10, 24),
+                new THREE.TetrahedronGeometry(34, 0),
+                new THREE.IcosahedronGeometry(50, 1)
+            ];
+
+            for (let i = 0; i < 5; i++) {
+                const mat = new THREE.MeshBasicMaterial({
+                    color: i % 2 === 0 ? 0x00f0ff : 0xff00aa,
+                    wireframe: true, transparent: true, opacity: 0.16
+                });
+                const mesh = new THREE.Mesh(geos[i], mat);
+                mesh.position.set(
+                    (Math.random() - 0.5) * 1100,
+                    (Math.random() - 0.5) * 700,
+                    (Math.random() - 0.5) * 600 - 150
+                );
+                mesh.userData = {
+                    rx: (Math.random() - 0.5) * 0.006,
+                    ry: (Math.random() - 0.5) * 0.006,
+                    rz: (Math.random() - 0.5) * 0.004,
+                    speed: Math.random() * 0.35 + 0.15,
+                    amp: Math.random() * 25 + 12,
+                    baseY: mesh.position.y
+                };
+                scene.add(mesh);
+                shapes.push(mesh);
+            }
+
+            // Центральное ядро
+            const core = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(48, 1),
+                new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.22 })
+            );
+            core.position.z = -80;
+            core.userData = { rx: 0.003, ry: 0.004, rz: 0.002, speed: 0.25, amp: 16, baseY: 0, core: true };
+            scene.add(core);
+            shapes.push(core);
+
+            const inner = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(24, 0),
+                new THREE.MeshBasicMaterial({ color: 0xff00aa, wireframe: true, transparent: true, opacity: 0.3 })
+            );
+            inner.position.z = -80;
+            inner.userData = { rx: -0.004, ry: 0.005, rz: -0.003, speed: 0.35, amp: 12, baseY: 0 };
+            scene.add(inner);
+            shapes.push(inner);
+
+            document.addEventListener('mousemove', e => {
+                mouseX = (e.clientX - innerWidth / 2) * 0.35;
+                mouseY = (e.clientY - innerHeight / 2) * 0.25;
+            });
+            window.addEventListener('resize', () => {
+                camera.aspect = innerWidth / innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(innerWidth, innerHeight);
+            });
+
+            animate();
         }
 
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = Date.now() * 0.0003;
+
+            targetX += (mouseX - targetX) * 0.04;
+            targetY += (mouseY - targetY) * 0.04;
+            camera.position.x += (targetX - camera.position.x) * 0.025;
+            camera.position.y += (-targetY - camera.position.y) * 0.025;
+            camera.lookAt(scene.position);
+
+            if (particles) {
+                particles.rotation.y = t * 0.12;
+                particles.rotation.x = Math.sin(t * 0.18) * 0.06;
+            }
+
+            shapes.forEach((m, i) => {
+                const d = m.userData;
+                m.rotation.x += d.rx;
+                m.rotation.y += d.ry;
+                m.rotation.z += d.rz;
+                m.position.y = d.baseY + Math.sin(t * d.speed + i) * d.amp;
+                if (d.core) m.scale.setScalar(1 + Math.sin(t * 1.8) * 0.07);
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // Запускаем Three сразу после небольшой задержки
+        setTimeout(initThree, 50);
+
+        // ===== NAV =====
+        window.addEventListener('scroll', () => {
+            document.getElementById('navbar').classList.toggle('scrolled', scrollY > 40);
+        });
+
+        // ===== REVEAL =====
+        function initReveal() {
+            const obs = new IntersectionObserver(entries => {
+                entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+        }
+
+        // ===== STATS =====
+        function animateStats() {
+            document.querySelectorAll('.stat-num').forEach(el => {
+                const target = +el.dataset.target;
+                if (target === 0) { el.textContent = '0'; return; }
+                let cur = 0;
+                const step = target / 50;
+                const t = setInterval(() => {
+                    cur += step;
+                    if (cur >= target) { el.textContent = target; clearInterval(t); }
+                    else el.textContent = Math.floor(cur);
+                }, 20);
+            });
+        }
+
+        // ===== AI CHAT (универсальный OpenAI-совместимый) =====
+        let apiKey = localStorage.getItem('vibe_api_key') || '';
+        let baseUrl = localStorage.getItem('vibe_base_url') || 'https://api.groq.com/openai/v1';
+        let modelName = localStorage.getItem('vibe_model') || 'llama-3.3-70b-versatile';
+
+        const chat = document.getElementById('chatContainer');
+        const input = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        input.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+
+        function setExample(t) {
+            input.value = t;
+            input.focus();
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+        }
+
+        function setPreset(name) {
+            const presets = {
+                groq: {
+                    url: 'https://api.groq.com/openai/v1',
+                    model: 'llama-3.3-70b-versatile',
+                    hint: 'Ключ с console.groq.com'
+                },
+                openrouter: {
+                    url: 'https://openrouter.ai/api/v1',
+                    model: 'meta-llama/llama-3.3-70b-instruct:free',
+                    hint: 'Ключ с openrouter.ai'
+                },
+                deepseek: {
+                    url: 'https://api.deepseek.com/v1',
+                    model: 'deepseek-chat',
+                    hint: 'Ключ с platform.deepseek.com'
+                },
+                ollama: {
+                    url: 'http://localhost:11434/v1',
+                    model: 'qwen2.5-coder:7b',
+                    hint: 'Локальный Ollama (ключ можно оставить пустым или "ollama")'
+                },
+                openai: {
+                    url: 'https://api.openai.com/v1',
+                    model: 'gpt-4o-mini',
+                    hint: 'Ключ с platform.openai.com'
+                }
+            };
+            const p = presets[name];
+            if (!p) return;
+            document.getElementById('baseUrlInput').value = p.url;
+            document.getElementById('modelInput').value = p.model;
+        }
+
+        function openKeyModal() {
+            document.getElementById('keyModal').classList.add('active');
+            document.getElementById('apiKeyInput').value = apiKey;
+            document.getElementById('baseUrlInput').value = baseUrl;
+            document.getElementById('modelInput').value = modelName;
+        }
+        function closeKeyModal() {
+            document.getElementById('keyModal').classList.remove('active');
+        }
+        function saveApiKey() {
+            apiKey = document.getElementById('apiKeyInput').value.trim();
+            baseUrl = document.getElementById('baseUrlInput').value.trim().replace(/\/$/, '');
+            modelName = document.getElementById('modelInput').value.trim();
+
+            if (!baseUrl) baseUrl = 'https://api.groq.com/openai/v1';
+            if (!modelName) modelName = 'llama-3.3-70b-versatile';
+
+            localStorage.setItem('vibe_api_key', apiKey);
+            localStorage.setItem('vibe_base_url', baseUrl);
+            localStorage.setItem('vibe_model', modelName);
+
+            closeKeyModal();
+
+            if (apiKey || baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+                addMsg('ai', `Настройки сохранены.<br>Endpoint: <code>${baseUrl}</code><br>Модель: <code>${modelName}</code>`);
+            } else {
+                addMsg('ai', 'Ключ не указан — работает demo-режим.');
+            }
+        }
+
+        function addMsg(role, content) {
+            const div = document.createElement('div');
+            div.className = `msg ${role}`;
+            if (role === 'ai' && content.includes('```')) {
+                div.innerHTML = content
+                    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    .replace(/\n/g, '<br>');
+            } else {
+                div.innerHTML = content.replace(/\n/g, '<br>');
+            }
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+            return div;
+        }
+
+        async function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+            addMsg('user', text);
+            input.value = '';
+            input.style.height = 'auto';
+            sendBtn.disabled = true;
+
+            const thinking = addMsg('ai', '<span style="opacity:0.55">Генерирую код...</span>');
+
+            const isLocal = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+            const hasKey = !!apiKey;
+
+            try {
+                if (!hasKey && !isLocal) {
+                    // Demo mode
+                    await new Promise(r => setTimeout(r, 900 + Math.random() * 700));
+                    thinking.remove();
+                    addMsg('ai', demoReply(text));
+                } else {
+                    // Универсальный OpenAI-compatible запрос
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    if (hasKey) {
+                        headers['Authorization'] = 'Bearer ' + apiKey;
+                    }
+
+                    // OpenRouter требует эти заголовки
+                    if (baseUrl.includes('openrouter.ai')) {
+                        headers['HTTP-Referer'] = window.location.href;
+                        headers['X-Title'] = 'VibeCode AI';
+                    }
+
+                    const res = await fetch(baseUrl + '/chat/completions', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({
+                            model: modelName,
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: 'Ты VibeCoder — AI для вайб-кодинга. Генерируй красивый современный код по описанию вайба. Отвечай на русском. Давай готовый код. Используй glassmorphism, неон, анимации когда уместно. Без длинных вступлений.'
+                                },
+                                { role: 'user', content: text }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 2000
+                        })
+                    });
+
+                    if (!res.ok) {
+                        const errText = await res.text().catch(() => '');
+                        throw new Error(`HTTP ${res.status}: ${errText.slice(0, 180)}`);
+                    }
+
+                    const data = await res.json();
+                    thinking.remove();
+
+                    const content = data.choices?.[0]?.message?.content 
+                        || data.choices?.[0]?.text 
+                        || JSON.stringify(data).slice(0, 300);
+
+                    addMsg('ai', content);
+                }
+            } catch (err) {
+                thinking.remove();
+                addMsg('ai', `Ошибка: ${err.message}<br><br>Проверь Base URL, модель и ключ. Для локального Ollama ключ можно не указывать.`);
+            }
+            sendBtn.disabled = false;
+        }
+
+        function demoReply(prompt) {
+            const p = prompt.toLowerCase();
+            if (p.includes('киберпанк') || p.includes('неон')) {
+                return `Киберпанк-вайб. Готовый фрагмент:\n\n\`\`\`html\n<div class="cyber">\n  <h1 class="glitch">NEURAL_LINK</h1>\n  <button class="neon">ПОДКЛЮЧИТЬСЯ</button>\n</div>\n\n<style>\n.cyber {\n  background: #050510;\n  border: 1px solid #00f0ff;\n  box-shadow: 0 0 30px rgba(0,240,255,0.3);\n  padding: 40px; text-align: center;\n}\n.glitch {\n  font-family: monospace; color: #00f0ff;\n  text-shadow: 0 0 12px #00f0ff; font-size: 2rem;\n}\n.neon {\n  background: transparent; border: 1px solid #ff00aa;\n  color: #ff00aa; padding: 12px 24px;\n  font-family: monospace; cursor: pointer;\n  box-shadow: 0 0 15px rgba(255,0,170,0.3);\n  transition: 0.3s;\n}\n.neon:hover { background: #ff00aa; color: #050510; }\n</style>\n\`\`\`\n\nХочешь полный лендинг или Three.js сцену?`;
+            }
+            if (p.includes('apple') || p.includes('минимал')) {
+                return `Чистый минимализм:\n\n\`\`\`html\n<section style="min-height:100vh;display:grid;place-items:center;background:#f5f5f7;font-family:system-ui;text-align:center">\n  <div>\n    <h1 style="font-size:clamp(2.5rem,7vw,4.5rem);font-weight:700;letter-spacing:-0.03em;color:#1d1d1f">Просто.<br>Идеально.</h1>\n    <p style="color:#86868b;font-size:1.2rem;margin:16px 0 28px">Дизайн, который дышит.</p>\n    <button style="background:#0071e3;color:#fff;border:none;padding:12px 24px;border-radius:980px;font-size:1rem;cursor:pointer">Узнать больше</button>\n  </div>\n</section>\n\`\`\``;
+            }
+            if (p.includes('three') || p.includes('3d') || p.includes('сцен')) {
+                return `Минимальная красивая Three.js сцена:\n\n\`\`\`html\n<canvas id="c"></canvas>\n<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>\n<script>\nconst s=new THREE.Scene();\nconst c=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000);\nconst r=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});\nr.setSize(innerWidth,innerHeight);r.setClearColor(0x050510);\nconst m=new THREE.Mesh(new THREE.TorusKnotGeometry(1.2,0.35,100,14),new THREE.MeshBasicMaterial({color:0x00f0ff,wireframe:true}));\ns.add(m);c.position.z=4;\n(function a(){requestAnimationFrame(a);m.rotation.x+=0.005;m.rotation.y+=0.008;r.render(s,c)})();\n<\/script>\n\`\`\``;
+            }
+            return `Понял вайб. Базовая заготовка:\n\n\`\`\`html\n<div style="min-height:100vh;display:grid;place-items:center;background:#0a0a12;color:#e0e8ff;font-family:system-ui">\n  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(0,240,255,0.2);border-radius:18px;padding:40px;text-align:center;max-width:400px">\n    <h1 style="background:linear-gradient(90deg,#00f0ff,#ff00aa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1.6rem">Твой вайб здесь</h1>\n    <p style="opacity:0.7;margin-top:10px">Уточни стиль или стек — сделаю точнее.</p>\n  </div>\n</div>\n\`\`\`\n\nОпиши подробнее — сделаю сложнее и точнее.`;
+        }
+
+        document.getElementById('keyModal').addEventListener('click', e => {
+            if (e.target.id === 'keyModal') closeKeyModal();
         });
     </script>
 </body>
